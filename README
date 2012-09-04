@@ -2,4 +2,8 @@
 Java GLR Parser
 
 This parser is intended to be a general parser to help parse text not easily handled by
-more efficient LR or LL parsers.
+LR and LL parsers.
+
+It supports left and right recursion and ambiguous grammars and inputs can also be handled.
+
+
