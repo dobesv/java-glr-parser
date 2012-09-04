@@ -122,9 +122,6 @@ public class BasicTests {
 		assertArrayEquals(ignoredExpected, ignoredActual);
 	}
 
-//	String[] exprs = {"12 + 34", " 12 + 34 ", "\t\r\n12\r\t +\n34\n\n", 
-//	"/*pre*/12/*mid*/+/*mid2*/34/*after*/",
-//	"//before\n12//mid\n+\n//mid\n  34 // after"
 	@Test
 	public void parseAdditionWithInlineComments() throws Exception {
 		String input = "/*pre*/12/*mid*/+/*mid2*/34/*after*/";

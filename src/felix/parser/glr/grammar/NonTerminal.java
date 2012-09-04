@@ -24,8 +24,6 @@ public class NonTerminal extends Symbol {
 	
 	@Override
 	public void computeActions(final State prevState, State leftState, Requirement req, Collection<BuildQueueItem> queue, Automaton automaton) {
-		System.out.println("computeActions ( "+prevState+" -> "+this+" )");
-		
 		for(Rule r : rules) {
 			if(req == null || req.check(r.priority)) {
 				r.computeActions(this, prevState, leftState, queue, automaton);

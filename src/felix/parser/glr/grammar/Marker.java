@@ -24,7 +24,6 @@ public class Marker extends Terminal {
 	 */
 	public static final Marker END_OF_FILE = new Marker("<end>") {
 		public Node match(ParserReader input, StackHead head, String ignored) throws IOException {
-			System.out.println("Checking for "+this+"; fp = "+input.getCurrentOffset()+" out of "+input.fileSize);
 			if(input.getCurrentOffset() == input.fileSize)
 				return input.markerToken(this);
 			else

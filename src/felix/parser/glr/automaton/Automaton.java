@@ -129,14 +129,11 @@ public class Automaton {
 		while(!queue.isEmpty()) {
 			final BuildQueueItem item = queue.removeLast();
 			if(itemsExecuted.add(item)) {
-				System.out.println("Doing: "+item);
 				item.invoke(queue, this);
-			} else {
-				System.out.println("Skipping: "+item);
 			}
 		}
 		
-		System.out.println(this.toString());
+		//System.out.println(this.toString());
 		return this;
 	}
 	
@@ -152,7 +149,6 @@ public class Automaton {
 	 */
 	public boolean addAction(State left, Action action) {
 		if(action == null) throw new NullPointerException();
-		System.out.println("Add action: "+left+" : "+action);
 		Set<Action> actionSet = getActions(left, true);
 		return actionSet.add(action);
 	}

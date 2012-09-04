@@ -64,7 +64,7 @@ public class Rule {
 	}
 
 	void computeActions(Symbol symbol, final State prevState, State statePrefix, Collection<BuildQueueItem> queue, Automaton automaton) {
-		System.out.println("  "+prevState+" "+statePrefix+" "+this+" => "+symbol.id);
+		//System.out.println("  "+prevState+" "+statePrefix+" "+this+" => "+symbol.id);
 		
 		// For a rule like A B C D => S
 		// And a prefix X Y Z
