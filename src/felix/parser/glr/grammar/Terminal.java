@@ -31,8 +31,8 @@ public abstract class Terminal extends Symbol {
 		}
 	}
 	
-	public Token build(FileRange fileRange, String text) {
-		return new Token(fileRange, this, text);
+	public Token build(FileRange fileRange, String text, String ignored) {
+		return new Token(fileRange, this, text, ignored);
 	}
 	
 	@Override

@@ -28,7 +28,7 @@ public class KeywordTerminal extends Terminal {
 	}
 	
 	@Override
-	public Node match(ParserReader input, StackHead head) throws IOException {
+	public Node match(ParserReader input, StackHead head, String ignored) throws IOException {
 		final int len = text.length();
 		if(input.remaining() < len)
 			return null;
@@ -41,7 +41,7 @@ public class KeywordTerminal extends Terminal {
 				return null;
 			}
 		}
-		return new Token(input.getFileRange(start), this, text);
+		return new Token(input.getFileRange(start), this, text, ignored);
 	}
 	
 	@Override

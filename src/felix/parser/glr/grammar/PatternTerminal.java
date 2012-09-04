@@ -37,8 +37,8 @@ public class PatternTerminal extends Terminal {
 	}
 	
 	@Override
-	public Node match(ParserReader input, StackHead head) throws IOException {
-		return input.checkNextToken(re, this);
+	public Node match(ParserReader input, StackHead head, String ignored) throws IOException {
+		return input.checkNextToken(re, this, ignored);
 	}
 	
 	@Override

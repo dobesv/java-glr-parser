@@ -30,10 +30,10 @@ public class SymbolRef extends Symbol {
 	}
 	
 	@Override
-	public Node match(ParserReader input, StackHead head)
+	public Node match(ParserReader input, StackHead head, String ignored)
 			throws IOException {
 		Symbol realSym = getRealSym(head.automaton);
-		return realSym.match(input, head);
+		return realSym.match(input, head, ignored);
 	}
 
 	public Symbol getRealSym(Automaton automaton) {

@@ -38,7 +38,7 @@ public class Reduce extends Action {
 	}
 	
 	@Override
-	public StackHead apply(StackHead head, ParserReader reader) {
+	public StackHead apply(StackHead head, ParserReader reader, String ignored) {
 		Node[] nodes = new Node[parts.length];
 		// Match against the nodes on the stack; if we match the whole pattern then we can reduce.
 		State state = head.state;
@@ -56,7 +56,7 @@ public class Reduce extends Action {
 			state = state.left;
 		}
 		final StackHead newStack = new StackHead(head, new State(head.state, symbol), new Element(symbol, nodes), priority);
-		System.out.println("Reduce "+this+" head.state="+(head==null?null:head.state)+" state="+state+" new stack:\n"+newStack);
+		//System.out.println("Reduce "+this+" head.state="+(head==null?null:head.state)+" state="+state+" new stack:\n"+newStack);
 		return newStack;
 		
 	}

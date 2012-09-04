@@ -68,12 +68,12 @@ public class BasicTests {
 			FilePos endPos = reader.getFilePos();
 			assertEquals(endIndex, endPos.offset);
 			String text = src.substring(startIndex, endIndex);
-			return new Token(new FileRange(TEST_FILENAME, startPos, endPos), symbol, text);
+			return new Token(new FileRange(TEST_FILENAME, startPos, endPos), symbol, text, "");
 		} finally { reader.close(); }
 	}
 	Token tok(String src, Symbol symbol, int startIndex, String expectedText) throws IOException {
 		final Token t = tok(src, symbol, startIndex, startIndex+expectedText.length());
-		assertEquals("Token position is off - the test needs to be fixed.", expectedText, t.text);
+		assertEquals("Token position is off - the test needs to be fixed.", expectedText, t.getText());
 		return t;
 	}
 	Token tok(String src, KeywordTerminal symbol, int startIndex) throws IOException {
@@ -83,7 +83,7 @@ public class BasicTests {
 	@Test
 	public void parseSingleNumber() throws Exception {
 		Token token = (Token) parse("5", NUM);
-		assertEquals(token.text, "5");
+		assertEquals(token.getText(), "5");
 		assertEquals(token.symbol, NUM);
 	}
 	
@@ -109,6 +109,17 @@ public class BasicTests {
 		Token expectRight = tok(input, NUM, 6, "34");
 		Token expecteds[] = {expectLeft, expectOp, expectRight};
 		assertArrayEquals(expecteds, node.children);
+		checkIgnored(node, new String[] {" ", " ", " "});
+	}
+
+	private void checkIgnored(Element node, String[] ignoredExpected) {
+		String[] ignoredActual = new String[node.children.length];
+		int i=0;
+		for(Node n : node.children) {
+			ignoredActual[i] = ((Token)n).getIgnoredPrefix();
+			i++;
+		}
+		assertArrayEquals(ignoredExpected, ignoredActual);
 	}
 
 //	String[] exprs = {"12 + 34", " 12 + 34 ", "\t\r\n12\r\t +\n34\n\n", 
@@ -124,6 +135,7 @@ public class BasicTests {
 		Token expectRight = tok(input, NUM, 25, "34");
 		Token expecteds[] = {expectLeft, expectOp, expectRight};
 		assertArrayEquals(expecteds, node.children);
+		checkIgnored(node, new String[] {"/*pre*/", "/*mid*/", "/*mid2*/"});
 	}
 	
 	@Test
@@ -136,6 +148,7 @@ public class BasicTests {
 		Token expectRight = tok(input, NUM, 27, "34");
 		Token expecteds[] = {expectLeft, expectOp, expectRight};
 		assertArrayEquals(expecteds, node.children);
+		checkIgnored(node, new String[] {"//pre\n ", " //mid\n ", " //mid2\n "});
 	}
 	
 	@Test

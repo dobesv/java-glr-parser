@@ -24,8 +24,8 @@ public class Shift extends Action {
 	}
 	
 	@Override
-	public StackHead apply(StackHead head, ParserReader reader) throws IOException {
-		Node node = symbol.match(reader, head);
+	public StackHead apply(StackHead head, ParserReader reader, String ignored) throws IOException {
+		Node node = symbol.match(reader, head, ignored);
 		if(node != null)
 			return new StackHead(head, this.state, node, priority);
 		else

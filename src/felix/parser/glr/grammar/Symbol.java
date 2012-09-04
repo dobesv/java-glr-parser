@@ -79,8 +79,9 @@ public abstract class Symbol implements Comparable<Symbol> {
 	 * 
 	 * If the match is unsuccessful, the input position is left as it was when the method was called.  If
 	 * the parse is successful, the input position is moved to the end of the part of the input that matched.
+	 * @param ignored TODO
 	 */
-	public abstract Node match(ParserReader input, StackHead head) throws IOException;
+	public abstract Node match(ParserReader input, StackHead head, String ignored) throws IOException;
 
 	private Symbol withPriorityRequirement(Requirement req) {
 		return new SymbolWithPriorityRequirement(this, req);

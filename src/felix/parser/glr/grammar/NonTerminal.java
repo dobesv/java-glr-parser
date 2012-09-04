@@ -37,7 +37,7 @@ public class NonTerminal extends Symbol {
 	 * of this non-terminal.
 	 */
 	@Override
-	public Node match(ParserReader input, StackHead head) {
+	public Node match(ParserReader input, StackHead head, String ignored) {
 		if(head != null && head.node != null && this.equals(head.node.symbol)) {
 			return head.node;
 		} else {

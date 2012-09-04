@@ -18,13 +18,13 @@ public class Accept extends Action {
 	}
 
 	@Override
-	public StackHead apply(StackHead head, ParserReader reader) throws IOException {
+	public StackHead apply(StackHead head, ParserReader reader, String ignored) throws IOException {
 		// If we are at the top of the stack
 		if(head.left != null && head.left.left != null)
 			return null;
 		
 		// And we should have consumed everything up the end of the input
-		final Node token = Marker.END_OF_FILE.match(reader, head);
+		final Node token = Marker.END_OF_FILE.match(reader, head, ignored);
 		if(token == null)
 			return null;
 

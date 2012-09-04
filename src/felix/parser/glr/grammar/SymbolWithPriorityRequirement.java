@@ -42,9 +42,9 @@ public class SymbolWithPriorityRequirement extends Symbol {
 	}
 
 	@Override
-	public Node match(ParserReader input, StackHead head)
+	public Node match(ParserReader input, StackHead head, String ignored)
 			throws IOException {
-		final Node node = symbol.match(input, head);
+		final Node node = symbol.match(input, head, ignored);
 		return node;
 	}
 

@@ -8,13 +8,19 @@ import felix.parser.util.FilePos;
 import felix.parser.util.FileRange;
 
 public class Token extends Node {
-	public final String text;
-	public final FileRange fileRange;
+	private final String text;
+	private final FileRange fileRange;
+	private final String ignoredPrefix;
 	
-	public Token(FileRange fileRange, Symbol symbol, String text) {
+	public Token(FileRange fileRange, Symbol symbol, String text, String ignoredPrefix) {
 		super(symbol);
 		this.fileRange = fileRange;
 		this.text = text;
+		this.ignoredPrefix = ignoredPrefix;
+	}
+	
+	public Token(FileRange fileRange, Symbol symbol, String text) {
+		this(fileRange, symbol, text, "");
 	}
 
 	@Override
@@ -24,8 +30,8 @@ public class Token extends Node {
 	
 	@Override
 	public String toString() {
-		return ((text.equals(symbol.id) || text.isEmpty()) ? symbol.id :
-		 symbol.id+"("+text.replace("\n", "\\n").replace("\r", "\\r")+")"); //+"@("+fileRange+")";
+		return ((getText().equals(symbol.id) || getText().isEmpty()) ? symbol.id :
+		 symbol.id+"("+getText().replace("\n", "\\n").replace("\r", "\\r")+")"); //+"@("+fileRange+")";
 	}
 
 	
@@ -34,8 +40,8 @@ public class Token extends Node {
 		final int prime = 31;
 		int result = super.hashCode();
 		result = prime * result
-				+ ((fileRange == null) ? 0 : fileRange.hashCode());
-		result = prime * result + ((text == null) ? 0 : text.hashCode());
+				+ ((getFileRange() == null) ? 0 : getFileRange().hashCode());
+		result = prime * result + ((getText() == null) ? 0 : getText().hashCode());
 		return result;
 	}
 
@@ -48,9 +54,9 @@ public class Token extends Node {
 		if (getClass() != obj.getClass())
 			return false;
 		Token other = (Token) obj;
-		if (!fileRange.equals(other.fileRange))
+		if (!getFileRange().equals(other.getFileRange()))
 			return false;
-		if (!text.equals(other.text))
+		if (!getText().equals(other.getText()))
 			return false;
 		return true;
 	}
@@ -62,6 +68,18 @@ public class Token extends Node {
 
 	public FilePos getEndPos() {
 		return getFileRange().getEnd();
+	}
+
+	public String getText() {
+		return text;
+	}
+
+	/**
+	 * Any text that was consumed immediately before this token but not used as part of parsing.  Typically
+	 * this is whitespace and comments.
+	 */
+	public String getIgnoredPrefix() {
+		return ignoredPrefix;
 	}
 
 	

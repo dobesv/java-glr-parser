@@ -14,7 +14,7 @@ public abstract class Action implements Comparable<Action> {
 		return priority.compareTo(o.priority);
 	}
 
-	public abstract StackHead apply(StackHead head, ParserReader reader) throws IOException;
+	public abstract StackHead apply(StackHead head, ParserReader reader, String ignored) throws IOException;
 
 	public Action(Priority priority) {
 		super();

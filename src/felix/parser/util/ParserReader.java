@@ -1,14 +1,17 @@
 package felix.parser.util;
 
 import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.CharBuffer;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import felix.parser.glr.grammar.PatternTerminal;
 import felix.parser.glr.grammar.Symbol;
+import felix.parser.glr.grammar.Terminal;
 import felix.parser.glr.parsetree.Token;
 
 /**
@@ -302,14 +305,16 @@ public class ParserReader extends Reader {
 	 * or in the original position if the match fails.
 	 * This will not match an empty string even if the regular expression
 	 * would allow it.
+	 * 
+	 * @param ignoredTokens Tokens that were ignored as comments/whitespace immediately before this one 
 	 */
-	public Token checkNextToken(Pattern re, PatternTerminal term) throws IOException {
+	public Token checkNextToken(Pattern re, PatternTerminal term, String ignored) throws IOException {
 		FilePos start = getFilePos();
 		Matcher m = matcher(re);
 		if(m.lookingAt() && m.end() > m.start()) {
 			// Position just at the end of the token that was matched
 			seek(start.offset + m.end());
-			return new Token(getFileRange(start), term, m.group());
+			return new Token(getFileRange(start), term, m.group(), ignored);
 		}
 		seek(start);
 		return null;
@@ -362,5 +367,40 @@ public class ParserReader extends Reader {
 	/** Return a zero-length token at the current file position */
 	public Token markerToken(Symbol marker) {
 		return new Token(getFileRange(getFilePos()), marker, "");
+	}
+
+	/**
+	 * Read any input matching the given terminals and return it as a string.
+	 * <p> 
+	 * The input is positioned immediately after the last character matched.
+	 */
+	public String consume(Set<Terminal> ignore) throws IOException {
+		FilePos startStartPos = getFilePos();
+		FilePos startPos = startStartPos;
+		for(;;) {
+			for(Terminal term : ignore) {
+				term.match(this, null, null);
+			}
+			FilePos endPos = getFilePos();
+			if(endPos.equals(startPos)) {
+				// No forward movement, we're done
+				int chars = endPos.offset - startStartPos.offset;
+				seek(startStartPos);
+				return readString(chars);
+			}
+			startPos = endPos;
+		}
+		
+	}
+
+	public String readString(int chars) throws IOException {
+		char[] buf = new char[chars];
+		int remaining = chars;
+		while(remaining > 0) {
+			int didRead = read(buf);
+			if(didRead == -1) throw new EOFException();
+			remaining -= didRead;
+		}
+		return new String(buf); 
 	}
 }

@@ -20,7 +20,6 @@ import felix.parser.glr.automaton.State;
 import felix.parser.glr.grammar.Grammar;
 import felix.parser.glr.grammar.Marker;
 import felix.parser.glr.grammar.Priority;
-import felix.parser.glr.grammar.Terminal;
 import felix.parser.glr.parsetree.Node;
 import felix.parser.util.FilePos;
 import felix.parser.util.ParserReader;
@@ -84,7 +83,7 @@ public class Parser {
 	static Node parse(Grammar grammar, ParserReader input) throws IOException, ParseException {
 		Automaton automaton = new Automaton().build(grammar);
 		LinkedList<StackHead> stacks = new LinkedList<>();
-		stacks.add(new StackHead(null, null, Marker.START_OF_FILE.match(input, null), Priority.DEFAULT, automaton));
+		stacks.add(new StackHead(null, null, Marker.START_OF_FILE.match(input, null, ""), Priority.DEFAULT, automaton));
 		ArrayList<Node> completed = new ArrayList<>();
 		try {
 			while(!stacks.isEmpty()) {
@@ -96,7 +95,7 @@ public class Parser {
 				State state = stack.state;
 				Set<Action> actions = automaton.getActions(state);
 				if(actions == null || actions.isEmpty()) {
-					System.out.println("No successor to state "+state);
+					//System.out.println("No successor to state "+state);
 					// Ran out of steam on this alternative...
 					continue;
 				}
@@ -105,23 +104,23 @@ public class Parser {
 				input.seek(stack.getParsePosition());
 				
 				// Skip over whitespace and comments
-				ignoreTokens(input, grammar.ignore, automaton);
+				String ignored = input.consume(grammar.ignore);
 				
-				System.out.println("Stack:\n"+stack);
+				//System.out.println("Stack:\n"+stack);
 				
 				// Compute our next state(s)
 				boolean matched = false;
 				for(Action action : actions) {
-					final StackHead newHead = action.apply(stack, input);
+					final StackHead newHead = action.apply(stack, input, ignored);
 					if(newHead != null) {
 						// We have a match!
 						matched = true;
-						System.out.println(stack.state + " "+action+" -> "+newHead.state+" => "+newHead.node);
+						//System.out.println(stack.state + " "+action+" -> "+newHead.state+" => "+newHead.node);
 						stacks.add(newHead);
 					}
 				}
 				if(!matched) {
-					System.out.println(input.getFilePos()+" in state "+stack.state+" nothing matched "+actions);
+					//System.out.println(input.getFilePos()+" in state "+stack.state+" nothing matched "+actions);
 				}
 			}
 		} catch(EOFException e) {
@@ -136,24 +135,6 @@ public class Parser {
 			throw new SyntaxError("Failed to parse", input.getFileRange(input.getFilePos()));
 		}
 			
-	}
-
-	/**
-	 * Advance the given token in the stream past any whitespace or comment type
-	 * tokens (the "skip" tokens).
-	 * @param automaton TODO
-	 */
-	static void ignoreTokens(ParserReader reader, Set<Terminal> ignore, Automaton automaton) throws IOException {
-		FilePos startPos = reader.getFilePos();
-		for(;;) {
-			for(Terminal term : ignore) {
-				term.match(reader, null);
-			}
-			FilePos endPos = reader.getFilePos();
-			if(endPos.equals(startPos)) // No forward movement, we're done
-				break;
-			startPos = endPos;
-		}
 	}
 
 	/**
