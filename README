@@ -1,0 +1,5 @@
+
+Java GLR Parser
+
+This parser is intended to be a general parser to help parse text not easily handled by
+more efficient LR or LL parsers.
