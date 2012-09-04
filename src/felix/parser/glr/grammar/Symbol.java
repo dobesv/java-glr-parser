@@ -3,8 +3,9 @@ package felix.parser.glr.grammar;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.TreeSet;
 
-import felix.parser.glr.Parser.StackEntry;
+import felix.parser.glr.Parser.StackHead;
 import felix.parser.glr.automaton.Automaton;
 import felix.parser.glr.automaton.Automaton.BuildQueueItem;
 import felix.parser.glr.automaton.State;
@@ -79,7 +80,7 @@ public abstract class Symbol implements Comparable<Symbol> {
 	 * If the match is unsuccessful, the input position is left as it was when the method was called.  If
 	 * the parse is successful, the input position is moved to the end of the part of the input that matched.
 	 */
-	public abstract Node match(ParserReader input, StackEntry head) throws IOException;
+	public abstract Node match(ParserReader input, StackHead head) throws IOException;
 
 	private Symbol withPriorityRequirement(Requirement req) {
 		return new SymbolWithPriorityRequirement(this, req);
@@ -95,6 +96,17 @@ public abstract class Symbol implements Comparable<Symbol> {
 
 	public boolean compatibleWith(Symbol symbol, Priority priority) {
 		return equals(symbol);
+	}
+
+	public abstract Collection<Rule> calculateRules(Automaton automaton);
+
+	public abstract boolean isNonTerminal();
+
+	/**
+	 * Add all referenced symbols to the given set recursively.
+	 */
+	public void collectSymbols(TreeSet<Symbol> set) {
+		set.add(this);
 	}
 	
 }

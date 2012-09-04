@@ -9,6 +9,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
@@ -18,13 +19,12 @@ import org.junit.Test;
 import felix.parser.glr.grammar.Grammar;
 import felix.parser.glr.grammar.KeywordTerminal;
 import felix.parser.glr.grammar.NonTerminal;
-import felix.parser.glr.grammar.PatternTerminal;
 import felix.parser.glr.grammar.Priority;
 import felix.parser.glr.grammar.Symbol;
 import felix.parser.glr.grammar.SymbolRef;
 import felix.parser.glr.grammar.Terminal;
-import felix.parser.glr.parsetree.Node;
 import felix.parser.glr.parsetree.Element;
+import felix.parser.glr.parsetree.Node;
 import felix.parser.glr.parsetree.Token;
 import felix.parser.util.FilePos;
 import felix.parser.util.FileRange;
@@ -33,27 +33,24 @@ import felix.parser.util.ParserReader;
 public class BasicTests {
 	private static final String TEST_FILENAME = "<test>";
 	final Terminal NUM = re("NUM", "[0-9]+");
-	final Terminal PLUS = kw("+");
-	final Terminal TIMES = kw("*");
+	final KeywordTerminal PLUS = kw("+");
+	final KeywordTerminal TIMES = kw("*");
 	final Terminal WS = re("WS", "\\s+");
 	final Terminal SL_COMMENT = re("SL_COMMENT", "\\s*//[^\n]*\\s*");
 	final Terminal ML_COMMENT = re("ML_COMMENT", "\\s*/\\*.*?\\*/\\s*");
 
 	final Set<Terminal> ignore = new TreeSet<>(Arrays.asList(WS, SL_COMMENT, ML_COMMENT));
-	Node _parse(String str, Symbol root, Symbol ... symbols) throws IOException, SyntaxError {
-		TreeSet<Symbol> symbolSet = new TreeSet<>(Arrays.asList(symbols));
-		symbolSet.add(root);
-		symbolSet.addAll(ignore);
-		Grammar grammar = new Grammar(symbolSet, root, ignore);
+	Node _parse(String str, Symbol root, Symbol ... symbols) throws IOException, ParseException {
+		Grammar grammar = new Grammar(root, ignore);
 		final Node parseResult = Parser.parse(grammar, str, TEST_FILENAME);
 		System.out.println("Parse result: "+parseResult);
 		return parseResult;
 	}
 	
-	Token parse(String str, Terminal term, Symbol ... symbols) throws IOException, SyntaxError {
+	Token parse(String str, Terminal term, Symbol ... symbols) throws IOException, ParseException {
 		return (Token)_parse(str, term, symbols);
 	}
-	Element parse(String str, NonTerminal rule, Symbol ... symbols) throws IOException, SyntaxError {
+	Element parse(String str, NonTerminal rule, Symbol ... symbols) throws IOException, ParseException {
 		return (Element)_parse(str, rule, symbols);
 	}
 	
@@ -149,28 +146,27 @@ public class BasicTests {
 		Priority pp = new Priority("pp", ps); // Product priority (generally * and /)
 		Priority pi = new Priority("pi", pp, ps); // Highest priority: literal integer
 		
-		NonTerminal product = nt("Product", _expr.gt(pp), TIMES, _expr.ge(pp));
-		NonTerminal sum = nt("Sum", _expr.gt(ps), PLUS, _expr.ge(ps));
 		NonTerminal expr = nt("Expr", 
-				rule(ps, sum), 
-				rule(pp, product), 
+				rule(ps, _expr.gt(ps), PLUS, _expr.ge(ps)), 
+				rule(pp, _expr.gt(pp), TIMES, _expr.ge(pp)), 
 				rule(pi, NUM));
-		Element node = parse(src, expr, sum, product, NUM, TIMES, PLUS);
+		Element node = parse(src, expr);
+		
 		System.out.println(node);
 		// Should be (12*34) + (56*78), or
 		// Sum(Expr(Product(Expr(NUM(12)),*,Expr(NUM(34)))),Expr(Product(Expr(NUM(56)),Expr(NUM(78)))))
 		Token _12 = tok(src, NUM, 0, "12");
-		Token star = tok(src, TIMES, 2, "*");
-		Token _34 = tok(src, NUM, 3, 5);
-		Token plus = tok(src, PLUS, 5, 6);
-		Token _56 = tok(src, NUM, 6, 8);
-		Token star2 = tok(src, TIMES, 8,9);
-		Token _78 = tok(src, NUM, 9, 11);
+		Token star = tok(src, TIMES, 2);
+		Token _34 = tok(src, NUM, 3, "34");
+		Token plus = tok(src, PLUS, 5);
+		Token _56 = tok(src, NUM, 6, "56");
+		Token star2 = tok(src, TIMES, 8);
+		Token _78 = tok(src, NUM, 9, "78");
 		
-		Element expected = sum.build(
-				expr.build(product.build(expr.build(_12), star, expr.build(_34))),
+		Element expected = expr.build(
+				expr.build(expr.build(_12), star, expr.build(_34)),
 				plus,
-				expr.build(product.build(expr.build(_56), star2, expr.build(_78)))
+				expr.build(expr.build(_56), star2, expr.build(_78))
 				);
 		assertEquals(expected, node);
 	}
@@ -179,11 +175,33 @@ public class BasicTests {
 	public void parseSumAndProductWithPrecedence4() throws Exception {
 		String src = "12+34*56+78";
 		Symbol _expr = new SymbolRef("Expr");
-		NonTerminal product = nt("Product", rule(_expr, TIMES, _expr));
-		NonTerminal sum = nt("Sum", rule(_expr, PLUS, _expr));
-		NonTerminal expr = nt("Expr", rule(sum), rule(product), rule(NUM));
-		Element node = parse(src, expr, sum, product, NUM, TIMES, PLUS);
-		System.out.println("Parse result: "+node);
+		Priority ps = new Priority("ps"); // Sum priority
+		Priority pp = new Priority("pp", ps); // Product priority (generally * and /)
+		Priority pi = new Priority("pi", pp, ps); // Highest priority: literal integer
+		
+		NonTerminal expr = nt("Expr", 
+				rule(ps, _expr.gt(ps), PLUS, _expr.ge(ps)), 
+				rule(pp, _expr.gt(pp), TIMES, _expr.ge(pp)), 
+				rule(pi, NUM));
+		Element node = parse(src, expr);
+		
+		System.out.println(node);
+		// Should be 12+((34*56)+78)
+		Token _12 = tok(src, NUM, 0, "12");
+		Token plus = tok(src, PLUS, 2);
+		Token _34 = tok(src, NUM, 3, "34");
+		Token star = tok(src, TIMES, 5);
+		Token _56 = tok(src, NUM, 6, "56");
+		Token plus2 = tok(src, PLUS, 8);
+		Token _78 = tok(src, NUM, 9, "78");
+		
+		Element expected = expr.build(expr.build(_12), plus,
+				expr.build(
+						expr.build(expr.build(_34), star, expr.build(_56)),
+						plus2,
+						expr.build(_78)
+				));
+		assertEquals(expected, node);
 		
 	}
 }

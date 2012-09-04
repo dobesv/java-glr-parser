@@ -1,6 +1,7 @@
 package felix.parser.glr.grammar;
 
 import java.util.Collection;
+import java.util.Collections;
 
 import felix.parser.glr.automaton.Automaton;
 import felix.parser.glr.automaton.Automaton.BuildQueueItem;
@@ -36,5 +37,15 @@ public abstract class Terminal extends Symbol {
 	
 	@Override
 	public void resolveRefs(Automaton automaton) {
+	}
+	
+	@Override
+	public Collection<Rule> calculateRules(Automaton automaton) {
+		return Collections.singleton(new Rule(this.priority, this));
+	}
+	
+	@Override
+	public boolean isNonTerminal() {
+		return false;
 	}
 }

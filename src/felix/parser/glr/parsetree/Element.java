@@ -72,11 +72,6 @@ public class Element extends Node {
 		Element other = (Element) obj;
 		if (!Arrays.equals(children, other.children))
 			return false;
-		if (fileRange == null) {
-			if (other.fileRange != null)
-				return false;
-		} else if (!fileRange.equals(other.fileRange))
-			return false;
 		return true;
 	}
 

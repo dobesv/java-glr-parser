@@ -2,7 +2,7 @@ package felix.parser.glr.automaton;
 
 import java.io.IOException;
 
-import felix.parser.glr.Parser.StackEntry;
+import felix.parser.glr.Parser.StackHead;
 import felix.parser.glr.grammar.Priority;
 import felix.parser.util.ParserReader;
 
@@ -14,7 +14,7 @@ public abstract class Action implements Comparable<Action> {
 		return priority.compareTo(o.priority);
 	}
 
-	public abstract StackEntry apply(StackEntry head, ParserReader reader) throws IOException;
+	public abstract StackHead apply(StackHead head, ParserReader reader) throws IOException;
 
 	public Action(Priority priority) {
 		super();

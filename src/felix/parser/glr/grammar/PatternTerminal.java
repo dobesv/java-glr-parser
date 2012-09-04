@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.regex.Pattern;
 
-import felix.parser.glr.Parser.StackEntry;
+import felix.parser.glr.Parser.StackHead;
 import felix.parser.glr.automaton.Automaton.BuildQueueItem;
 import felix.parser.glr.automaton.Reduce;
 import felix.parser.glr.automaton.Shift;
@@ -37,7 +37,7 @@ public class PatternTerminal extends Terminal {
 	}
 	
 	@Override
-	public Node match(ParserReader input, StackEntry head) throws IOException {
+	public Node match(ParserReader input, StackHead head) throws IOException {
 		return input.checkNextToken(re, this);
 	}
 	

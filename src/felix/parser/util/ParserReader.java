@@ -32,21 +32,22 @@ public class ParserReader extends Reader {
 			this.col = other.col;
 			this.offset = other.offset;
 		}
-		private void nextCol() {
-			col++;
+		public void assign(FilePos filePos) {
+			this.line = filePos.line;
+			this.col = filePos.col;
+			this.offset = filePos.offset;
 		}
-
-		private void nextLine() {
-			line++;
-			col = 1;
-		}
-
-
+		
+		
 		private void accumulate(int ch) {
+			if(ch == -1)
+				return;
+			
 			if(ch == '\n') {
-				nextLine();
-			} else if(ch == -1) {
-				nextCol();
+				line++;
+				col = 1;
+			} else {
+				col++;
 			}
 			offset++;
 		}
@@ -144,6 +145,9 @@ public class ParserReader extends Reader {
 		
 		if(offset == current.offset) {
 			// Do nothing, we're already there
+		} else if(offset > current.offset) {
+			// Scan ahead
+			skip(offset-current.offset);
 		} else if(offset == mark.offset) {
 			// Jump back to the mark
 			reset();
@@ -154,14 +158,14 @@ public class ParserReader extends Reader {
 			if(sameLineAsCurrent) {
 				// Reposition the reader on the desired character
 				delegate.reset();
-				delegate.skip(charsBack);
+				delegate.skip(offset-mark.offset);
 				
 				// Just directly calculate the column number
 				current.col -= charsBack;
-				current.offset -= charsBack;
+				current.offset = offset;
 			} else {
-				// Jump back to the mark, then scan ahead to the given offset
-				// Probably a lot slower than the above
+				// Jump back to the mark, then scan ahead to the given offset while recomputing the file offset
+				// This is slower than the above
 				reset();
 				skip(offset - mark.offset);
 			}
@@ -172,17 +176,64 @@ public class ParserReader extends Reader {
 	
 	/**
 	 * Read the file position from the parameter and seek to that position, if possible.
+	 * <p>
+	 * Note that this will assume that the line and column information provided are
+	 * correct for the given offset.
 	 * 
 	 * @see #seek(int)
 	 */
 	public void seek(Pos offset) throws IOException {
-		seek(offset.offset);
+		if(offset.offset == current.offset) {
+			// Do nothing, we're already there
+		} else if(offset.offset == mark.offset) {
+			// Jump back to the mark
+			reset();
+		} else if(offset.offset > current.offset){
+			skip(offset.offset - current.offset);
+		} else if(offset.offset > mark.offset){
+			delegate.reset();
+			delegate.skip(offset.offset-mark.offset);
+			current.assign(offset);
+		} else {
+			throw new IndexOutOfBoundsException("Cannot scan back past the last mark.");
+		}
 	}
 	
+	/**
+	 * Read the file position from the parameter and seek to that position, if possible.
+	 * <p>
+	 * Note that this will assume that the line and column information provided are
+	 * correct for the given offset.  To seek to just an offset, call seek(int).
+	 * 
+	 * @see #seek(int)
+	 */
 	public void seek(FilePos filePos) throws IOException {
-		seek(filePos.offset);
+		if(filePos.offset == current.offset) {
+			// Do nothing, we're already there
+		} else if(filePos.offset == mark.offset) {
+			// Jump back to the mark
+			reset();
+		} else if(filePos.offset > current.offset) {
+			skip(filePos.offset - current.offset);
+		} else if(filePos.offset > mark.offset){
+			delegate.reset();
+			delegate.skip(filePos.offset-mark.offset);
+			current.assign(filePos);
+		} else {
+			throw new IndexOutOfBoundsException("Cannot scan back past the last mark.");
+		}
 	}
 	
+	/**
+	 * Seek to the end of the given token.  The token is assumed to have come from
+	 * this file and to have a correct end line and column in it.
+	 * <p>
+	 * After this call, the file position will be set to read the character
+	 * immediately following thr provided token.
+	 * 
+	 * @param token Token to use as a reference.
+	 * @throws IOException If bytes had to be read from the the file and an errors occurs while doing so
+	 */
 	public void seekPast(Token token) throws IOException {
 		seek(token.getFileRange().getEnd());
 	}
@@ -248,7 +299,7 @@ public class ParserReader extends Reader {
 	 *
 	 * One should seek to the desired parse position before calling this;
 	 * it leaves the file position after the token that was consumed (if any)
-	 * or in the original position if not.
+	 * or in the original position if the match fails.
 	 * This will not match an empty string even if the regular expression
 	 * would allow it.
 	 */
@@ -298,7 +349,7 @@ public class ParserReader extends Reader {
 	}
 
 	/**
-	 * Return the file range from the last mark() to the current position.
+	 * Return the file range from the given position to the current position.
 	 */
 	public FileRange getFileRange(FilePos from) {
 		return new FileRange(filename, from, current.toFilePos());

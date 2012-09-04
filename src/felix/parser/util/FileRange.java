@@ -8,6 +8,9 @@ public class FileRange {
 	private final FilePos end;
 	public FileRange(String filename, FilePos start, FilePos end) {
 		super();
+		if(filename == null) throw new NullPointerException();
+		if(start == null) throw new NullPointerException();
+		if(end == null) throw new NullPointerException();
 		this.filename = filename;
 		this.start = start;
 		this.end = end;
@@ -36,20 +39,11 @@ public class FileRange {
 		if (getClass() != obj.getClass())
 			return false;
 		FileRange other = (FileRange) obj;
-		if (getEnd() == null) {
-			if (other.getEnd() != null)
-				return false;
-		} else if (!getEnd().equals(other.getEnd()))
+		if (!end.equals(other.end))
 			return false;
-		if (filename == null) {
-			if (other.filename != null)
-				return false;
-		} else if (!filename.equals(other.filename))
+		if (!filename.equals(other.filename))
 			return false;
-		if (start == null) {
-			if (other.start != null)
-				return false;
-		} else if (!start.equals(other.start))
+		if (!start.equals(other.start))
 			return false;
 		return true;
 	}
@@ -71,6 +65,12 @@ public class FileRange {
 	}
 	public FilePos getEnd() {
 		return end;
+	}
+	public int getStartOffset() {
+		return start.offset;
+	}
+	public int getEndOffset() {
+		return end.offset;
 	}
 	
 	

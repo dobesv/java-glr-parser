@@ -24,8 +24,8 @@ public class Token extends Node {
 	
 	@Override
 	public String toString() {
-		return ((text.equals(symbol.id) || text.isEmpty()) ? symbol.id : // +"@"+fileRange.start.offset;
-		 symbol.id+"("+text.replace("\n", "\\n").replace("\r", "\\r")+")"); //+"@"+fileRange.start.offset;
+		return ((text.equals(symbol.id) || text.isEmpty()) ? symbol.id :
+		 symbol.id+"("+text.replace("\n", "\\n").replace("\r", "\\r")+")"); //+"@("+fileRange+")";
 	}
 
 	
@@ -48,15 +48,9 @@ public class Token extends Node {
 		if (getClass() != obj.getClass())
 			return false;
 		Token other = (Token) obj;
-		if (fileRange == null) {
-			if (other.fileRange != null)
-				return false;
-		} else if (!fileRange.equals(other.fileRange))
+		if (!fileRange.equals(other.fileRange))
 			return false;
-		if (text == null) {
-			if (other.text != null)
-				return false;
-		} else if (!text.equals(other.text))
+		if (!text.equals(other.text))
 			return false;
 		return true;
 	}

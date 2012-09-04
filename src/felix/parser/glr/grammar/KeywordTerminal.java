@@ -2,7 +2,7 @@ package felix.parser.glr.grammar;
 
 import java.io.IOException;
 
-import felix.parser.glr.Parser.StackEntry;
+import felix.parser.glr.Parser.StackHead;
 import felix.parser.glr.parsetree.Node;
 import felix.parser.glr.parsetree.Token;
 import felix.parser.util.FilePos;
@@ -28,7 +28,7 @@ public class KeywordTerminal extends Terminal {
 	}
 	
 	@Override
-	public Node match(ParserReader input, StackEntry head) throws IOException {
+	public Node match(ParserReader input, StackHead head) throws IOException {
 		final int len = text.length();
 		if(input.remaining() < len)
 			return null;

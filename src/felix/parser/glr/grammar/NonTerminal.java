@@ -1,14 +1,16 @@
 package felix.parser.glr.grammar;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.TreeSet;
 
-import felix.parser.glr.Parser.StackEntry;
+import felix.parser.glr.Parser.StackHead;
 import felix.parser.glr.automaton.Automaton;
 import felix.parser.glr.automaton.Automaton.BuildQueueItem;
 import felix.parser.glr.automaton.State;
 import felix.parser.glr.grammar.Priority.Requirement;
-import felix.parser.glr.parsetree.Node;
 import felix.parser.glr.parsetree.Element;
+import felix.parser.glr.parsetree.Node;
 import felix.parser.util.ParserReader;
 
 public class NonTerminal extends Symbol {
@@ -35,7 +37,7 @@ public class NonTerminal extends Symbol {
 	 * of this non-terminal.
 	 */
 	@Override
-	public Node match(ParserReader input, StackEntry head) {
+	public Node match(ParserReader input, StackHead head) {
 		if(head != null && head.node != null && this.equals(head.node.symbol)) {
 			return head.node;
 		} else {
@@ -65,6 +67,23 @@ public class NonTerminal extends Symbol {
 	public void resolveRefs(Automaton automaton) {
 		for(Rule r : rules) {
 			r.resolveRefs(automaton);
+		}
+	}
+	
+	public Collection<Rule> calculateRules(Automaton automaton) {
+		return Arrays.asList(rules);
+	}
+	
+	@Override
+	public boolean isNonTerminal() {
+		return true;
+	}
+	
+	@Override
+	public void collectSymbols(TreeSet<Symbol> set) {
+		super.collectSymbols(set);
+		for(Rule r : rules) {
+			r.collectSymbols(set);
 		}
 	}
 }

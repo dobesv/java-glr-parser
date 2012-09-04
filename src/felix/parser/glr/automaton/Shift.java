@@ -2,7 +2,7 @@ package felix.parser.glr.automaton;
 
 import java.io.IOException;
 
-import felix.parser.glr.Parser.StackEntry;
+import felix.parser.glr.Parser.StackHead;
 import felix.parser.glr.grammar.Priority;
 import felix.parser.glr.grammar.Symbol;
 import felix.parser.glr.parsetree.Node;
@@ -20,14 +20,14 @@ public class Shift extends Action {
 
 	@Override
 	public String toString() {
-		return symbol.id+" -> "+state;
+		return "{"+symbol.id+" --> "+state+"}";
 	}
 	
 	@Override
-	public StackEntry apply(StackEntry head, ParserReader reader) throws IOException {
+	public StackHead apply(StackHead head, ParserReader reader) throws IOException {
 		Node node = symbol.match(reader, head);
 		if(node != null)
-			return new StackEntry(head, this.state, node, priority);
+			return new StackHead(head, this.state, node, priority);
 		else
 			return null;
 	}

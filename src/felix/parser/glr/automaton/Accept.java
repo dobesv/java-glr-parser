@@ -2,7 +2,7 @@ package felix.parser.glr.automaton;
 
 import java.io.IOException;
 
-import felix.parser.glr.Parser.StackEntry;
+import felix.parser.glr.Parser.StackHead;
 import felix.parser.glr.grammar.Marker;
 import felix.parser.glr.grammar.Priority;
 import felix.parser.glr.parsetree.Node;
@@ -18,7 +18,7 @@ public class Accept extends Action {
 	}
 
 	@Override
-	public StackEntry apply(StackEntry head, ParserReader reader) throws IOException {
+	public StackHead apply(StackHead head, ParserReader reader) throws IOException {
 		// If we are at the top of the stack
 		if(head.left != null && head.left.left != null)
 			return null;
@@ -29,7 +29,7 @@ public class Accept extends Action {
 			return null;
 
 		// OK, looks like we parsed everything then!
-		return new StackEntry(head, State.ACCEPT, head.node, head.priority);
+		return new StackHead(head, State.ACCEPT, head.node, head.priority);
 	}
 
 	@Override

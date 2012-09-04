@@ -2,8 +2,9 @@ package felix.parser.glr.grammar;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.TreeSet;
 
-import felix.parser.glr.Parser.StackEntry;
+import felix.parser.glr.Parser.StackHead;
 import felix.parser.glr.automaton.Automaton;
 import felix.parser.glr.automaton.Automaton.BuildQueueItem;
 import felix.parser.glr.automaton.State;
@@ -29,7 +30,7 @@ public class SymbolRef extends Symbol {
 	}
 	
 	@Override
-	public Node match(ParserReader input, StackEntry head)
+	public Node match(ParserReader input, StackHead head)
 			throws IOException {
 		Symbol realSym = getRealSym(head.automaton);
 		return realSym.match(input, head);
@@ -43,6 +44,11 @@ public class SymbolRef extends Symbol {
 	}
 	
 	@Override
+	public Collection<Rule> calculateRules(Automaton automaton) {
+		return getRealSym(automaton).calculateRules(automaton);
+	}
+	
+	@Override
 	public void resolveRefs(Automaton automaton) {
 		throw new UnsupportedOperationException();
 	}
@@ -51,4 +57,15 @@ public class SymbolRef extends Symbol {
 	public boolean compatibleWith(Symbol symbol, Priority priority) {
 		return id.equals(symbol.id);
 	}
+	
+	@Override
+	public boolean isNonTerminal() {
+		throw new UnsupportedOperationException();
+	}
+	
+	/**
+	 * Don't add symbol ref's to the core symbol list
+	 */
+	@Override
+	public void collectSymbols(TreeSet<Symbol> set) { }
 }

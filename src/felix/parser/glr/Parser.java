@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.CharBuffer;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Set;
@@ -18,18 +19,16 @@ import felix.parser.glr.automaton.Automaton;
 import felix.parser.glr.automaton.State;
 import felix.parser.glr.grammar.Grammar;
 import felix.parser.glr.grammar.Marker;
-import felix.parser.glr.grammar.PatternTerminal;
 import felix.parser.glr.grammar.Priority;
 import felix.parser.glr.grammar.Terminal;
 import felix.parser.glr.parsetree.Node;
-import felix.parser.glr.parsetree.Token;
 import felix.parser.util.FilePos;
 import felix.parser.util.ParserReader;
 
 public class Parser {
-	public static class StackEntry {
+	public static class StackHead {
 		// The parent state we based this action on
-		public final StackEntry left;
+		public final StackHead left;
 		
 		// Current state
 		public final State state;
@@ -43,7 +42,7 @@ public class Parser {
 		// Parse table, rules, and symbols
 		public final Automaton automaton;
 		
-		public StackEntry(StackEntry left, State state, Node node, Priority priority, Automaton automaton) {
+		public StackHead(StackHead left, State state, Node node, Priority priority, Automaton automaton) {
 			super();
 			this.left = left;
 			this.state = state;
@@ -52,14 +51,22 @@ public class Parser {
 			this.automaton = automaton;
 		}
 		
-		public StackEntry(StackEntry left, State state, Node node, Priority priority) {
+		public StackHead(StackHead left, State state, Node node, Priority priority) {
 			this(left, state, node, priority, left.automaton);
 		}
 
+		public StringBuffer toString(StringBuffer buf, int n) {
+			if(state == null && node == null && left == null) return buf.append("ROOT");
+			if(buf.length() > 0) buf.append("\n");
+			buf.append(n).append(": ").append(state==null?State.START_OF_FILE:state).append(" => ").append(node);
+			if(left != null) left.toString(buf, n+1);
+			return buf;
+		}
+		
 		@Override
 		public String toString() {
-			if(state == null && node == null) return "ROOT";
-			return left+" "+state+" => "+node;
+			if(state == null && node == null && left == null) return "ROOT";
+			return toString(new StringBuffer(), 0).toString();
 		}
 
 		public FilePos getParsePosition() {
@@ -72,22 +79,21 @@ public class Parser {
 	 * match the entire input given by the reader.
 	 * @param symbols TODO
 	 * @throws IOException 
-	 * @throws SyntaxError 
+	 * @throws ParseException 
 	 */
-	static Node parse(Grammar grammar, ParserReader input) throws IOException, SyntaxError {
+	static Node parse(Grammar grammar, ParserReader input) throws IOException, ParseException {
 		Automaton automaton = new Automaton().build(grammar);
-		LinkedList<StackEntry> heads = new LinkedList<>();
-		heads.add(new StackEntry(null, null, Marker.START_OF_FILE.match(input, null), Priority.DEFAULT, automaton));
-		ArrayList<StackEntry> completed = new ArrayList<>();
+		LinkedList<StackHead> stacks = new LinkedList<>();
+		stacks.add(new StackHead(null, null, Marker.START_OF_FILE.match(input, null), Priority.DEFAULT, automaton));
+		ArrayList<Node> completed = new ArrayList<>();
 		try {
-			while(!heads.isEmpty()) {
-				StackEntry head = heads.removeFirst();
-				if(head.state == State.ACCEPT) {
-					System.out.println("Complete parse: "+head.node);
-					completed.add(head);
+			while(!stacks.isEmpty()) {
+				StackHead stack = stacks.removeFirst();
+				if(stack.state == State.ACCEPT) {
+					completed.add(stack.node);
 					continue;
 				}
-				State state = head.state;
+				State state = stack.state;
 				Set<Action> actions = automaton.getActions(state);
 				if(actions == null || actions.isEmpty()) {
 					System.out.println("No successor to state "+state);
@@ -96,33 +102,35 @@ public class Parser {
 				}
 				
 				// Seek to the end of the last token we read
-				input.seek(head.getParsePosition());
+				input.seek(stack.getParsePosition());
 				
 				// Skip over whitespace and comments
 				ignoreTokens(input, grammar.ignore, automaton);
 				
+				System.out.println("Stack:\n"+stack);
+				
 				// Compute our next state(s)
 				boolean matched = false;
 				for(Action action : actions) {
-					final StackEntry newHead = action.apply(head, input);
+					final StackHead newHead = action.apply(stack, input);
 					if(newHead != null) {
 						// We have a match!
 						matched = true;
-						System.out.println(head.state + " "+action+" -> "+newHead.state+" => "+newHead.node);
-						heads.add(newHead);
+						System.out.println(stack.state + " "+action+" -> "+newHead.state+" => "+newHead.node);
+						stacks.add(newHead);
 					}
 				}
 				if(!matched) {
-					System.out.println(input.getFilePos()+" in state "+head.state+" nothing matched "+actions);
+					System.out.println(input.getFilePos()+" in state "+stack.state+" nothing matched "+actions);
 				}
 			}
 		} catch(EOFException e) {
 			throw new SyntaxError("Passed EOF during parse. (BUG?)", input.getFileRange(input.getFilePos()));
 		}
 		if(completed.size() == 1) {
-			return completed.get(0).node;
+			return completed.get(0);
 		} else if(completed.size() > 1){
-			throw new SyntaxError("Ambiguous parse.", input.getFileRange(input.getFilePos()));
+			throw new AmbiguousInputException(completed.toArray(new Node[completed.size()]));
 		} else {
 			// No successful parses
 			throw new SyntaxError("Failed to parse", input.getFileRange(input.getFilePos()));
@@ -151,7 +159,7 @@ public class Parser {
 	/**
 	 * Parse a string as an input, using the given symbol as the expected format of the input.
 	 */
-	public static Node parse(Grammar grammar, String input, String filename) throws IOException, SyntaxError {
+	public static Node parse(Grammar grammar, String input, String filename) throws IOException, ParseException {
 		return parse(grammar, new ParserReader(new StringReader(input), filename, input.length()));
 	}
 	
@@ -161,7 +169,7 @@ public class Parser {
 	 * This buffers the entire file into memory to allow seeking to and to count the number
 	 * of characters in the file.
 	 */
-	public static Node parse(Grammar grammar, File input, String charsetName) throws IOException, SyntaxError {
+	public static Node parse(Grammar grammar, File input, String charsetName) throws IOException, ParseException {
 		Reader in = new InputStreamReader(new FileInputStream(input), charsetName);
 		return parse(grammar, input.getPath(), (int) input.length(), in);
 	}
@@ -175,7 +183,7 @@ public class Parser {
 	 *                 ignored.  The number of bytes in a file may be OK for this as long as the file is exected
 	 *                 to have fewer characters than bytes (i.e. for UTF-8 or any 8-bit encoding).
 	 */
-	public static Node parse(Grammar grammar, String filename, int maxChars, Reader in) throws IOException, SyntaxError {
+	public static Node parse(Grammar grammar, String filename, int maxChars, Reader in) throws IOException, ParseException {
 		CharBuffer buf = CharBuffer.allocate(maxChars);
 		try {
 			while(in.read(buf) > 0) {

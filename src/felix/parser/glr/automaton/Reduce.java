@@ -2,7 +2,7 @@ package felix.parser.glr.automaton;
 
 import java.util.Arrays;
 
-import felix.parser.glr.Parser.StackEntry;
+import felix.parser.glr.Parser.StackHead;
 import felix.parser.glr.grammar.Priority;
 import felix.parser.glr.grammar.Symbol;
 import felix.parser.glr.parsetree.Node;
@@ -38,7 +38,7 @@ public class Reduce extends Action {
 	}
 	
 	@Override
-	public StackEntry apply(StackEntry head, ParserReader reader) {
+	public StackHead apply(StackHead head, ParserReader reader) {
 		Node[] nodes = new Node[parts.length];
 		// Match against the nodes on the stack; if we match the whole pattern then we can reduce.
 		State state = head.state;
@@ -55,8 +55,9 @@ public class Reduce extends Action {
 			head = head.left;
 			state = state.left;
 		}
-		System.out.println("Reduce "+this+" head.state="+(head==null?null:head.state)+" state="+state);
-		return new StackEntry(head, new State(state, symbol), new Element(symbol, nodes), priority);
+		final StackHead newStack = new StackHead(head, new State(head.state, symbol), new Element(symbol, nodes), priority);
+		System.out.println("Reduce "+this+" head.state="+(head==null?null:head.state)+" state="+state+" new stack:\n"+newStack);
+		return newStack;
 		
 	}
 	
