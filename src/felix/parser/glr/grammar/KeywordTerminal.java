@@ -29,18 +29,9 @@ public class KeywordTerminal extends Terminal {
 	
 	@Override
 	public Node match(ParserReader input, StackHead head, String ignored) throws IOException {
-		final int len = text.length();
-		if(input.remaining() < len)
-			return null;
-		
 		FilePos start = input.getFilePos();
-		for(int i=0; i < len; i++) {
-			final int ch = input.read();
-			if(ch != text.charAt(i)) {
-				input.seek(start);
-				return null;
-			}
-		}
+		if(!input.startsWith(text))
+			return null;
 		return new Token(input.getFileRange(start), this, text, ignored);
 	}
 	

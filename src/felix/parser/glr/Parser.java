@@ -25,6 +25,8 @@ import felix.parser.util.FilePos;
 import felix.parser.util.ParserReader;
 
 public class Parser {
+	public static boolean debug;
+	
 	public static class StackHead {
 		// The parent state we based this action on
 		public final StackHead left;
@@ -82,6 +84,7 @@ public class Parser {
 	 */
 	static Node parse(Grammar grammar, ParserReader input) throws IOException, ParseException {
 		Automaton automaton = new Automaton().build(grammar);
+		if(debug) System.out.println(automaton);
 		LinkedList<StackHead> stacks = new LinkedList<>();
 		stacks.add(new StackHead(null, null, Marker.START_OF_FILE.match(input, null, ""), Priority.DEFAULT, automaton));
 		ArrayList<Node> completed = new ArrayList<>();
@@ -95,7 +98,7 @@ public class Parser {
 				State state = stack.state;
 				Set<Action> actions = automaton.getActions(state);
 				if(actions == null || actions.isEmpty()) {
-					//System.out.println("No successor to state "+state);
+					if(debug) System.out.println("No successor to state "+state);
 					// Ran out of steam on this alternative...
 					continue;
 				}
@@ -106,7 +109,7 @@ public class Parser {
 				// Skip over whitespace and comments
 				String ignored = input.consume(grammar.ignore);
 				
-				//System.out.println("Stack:\n"+stack);
+				//if(debug) System.out.println("Stack:\n"+stack);
 				
 				// Compute our next state(s)
 				boolean matched = false;
@@ -115,12 +118,12 @@ public class Parser {
 					if(newHead != null) {
 						// We have a match!
 						matched = true;
-						//System.out.println(stack.state + " "+action+" -> "+newHead.state+" => "+newHead.node);
+						if(debug) System.out.println(stack.state + " "+action+" -> "+newHead.state+" => "+newHead.node);
 						stacks.add(newHead);
 					}
 				}
 				if(!matched) {
-					//System.out.println(input.getFilePos()+" in state "+stack.state+" nothing matched "+actions);
+					System.out.println(input.getFilePos()+" in state "+stack.state+" nothing matched "+actions);
 				}
 			}
 		} catch(EOFException e) {

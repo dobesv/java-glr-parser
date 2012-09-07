@@ -73,5 +73,11 @@ public class FileRange {
 		return end.offset;
 	}
 	
+	/**
+	 * Number of characters between the start and end of the range, including newlines.
+	 */
+	public int length() {
+		return getEndOffset() - getStartOffset();
+	}
 	
 }

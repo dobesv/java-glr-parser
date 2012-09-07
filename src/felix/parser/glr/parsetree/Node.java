@@ -10,6 +10,7 @@ public abstract class Node {
 	
 	public Node(Symbol symbol) {
 		super();
+		if(symbol == null) throw new NullPointerException();
 		this.symbol = symbol;
 	}
 

@@ -25,9 +25,9 @@ public abstract class Terminal extends Symbol {
 	}
 
 	@Override
-	public void computeActions(State prevState, State leftState, Requirement req, Collection<BuildQueueItem> queue, Automaton automaton) {
+	public void computeActions(State prevState, State statePrefix, Requirement req, Collection<BuildQueueItem> queue, Automaton automaton) {
 		if(req == null || req.check(priority)) {
-			automaton.addAction(prevState, new Shift(new State(leftState,this), this, priority));
+			automaton.addAction(prevState, new Shift(this, new State(statePrefix,this), priority));
 		}
 	}
 	

@@ -70,7 +70,7 @@ public class Reduce extends Action {
 			if(first) first = false; else sb.append(" ");
 			sb.append(sym.id);
 		}
-		sb.append(" -> ").append(symbol.id);
+		sb.append(" => ").append(symbol.id);
 		sb.append("}");
 		return sb.toString();
 	}

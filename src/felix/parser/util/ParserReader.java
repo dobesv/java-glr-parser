@@ -403,4 +403,41 @@ public class ParserReader extends Reader {
 		}
 		return new String(buf); 
 	}
+
+	/**
+	 * Check whether the given string matches the characters following
+	 * the current read position.
+	 * <p>
+	 * If they do, the read position is advanced beyond the end of the characters
+	 * that matched.  Otherwise, the file position will be reset back to the same 
+	 * position as before this call was made.
+	 * 
+	 * @param expected String to check for
+	 * @return True if the next characters match the string, or if the string was empty
+	 */
+	public boolean startsWith(String expected) throws IOException {
+		if(expected.length() > remaining())
+			return false;
+		FilePos start = getFilePos();
+		final int len = expected.length();
+		for(int i=0; i < len; i++) {
+			int ch = read();
+			if(ch != expected.charAt(i)) {
+				seek(start);
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	public boolean startsWith(char expected) throws IOException {
+		if(remaining() == 0)
+			return false;
+		FilePos start = getFilePos();
+		if(read() != expected) {
+			seek(start);
+			return false;
+		}
+		return true;
+	}
 }

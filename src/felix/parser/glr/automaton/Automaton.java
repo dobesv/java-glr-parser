@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
+import felix.parser.glr.Parser;
 import felix.parser.glr.grammar.Grammar;
 import felix.parser.glr.grammar.Priority;
 import felix.parser.glr.grammar.Symbol;
@@ -150,7 +151,13 @@ public class Automaton {
 	public boolean addAction(State left, Action action) {
 		if(action == null) throw new NullPointerException();
 		Set<Action> actionSet = getActions(left, true);
-		return actionSet.add(action);
+		if(actionSet.add(action)) {
+			if(Parser.debug) {
+				System.out.println("Automaton.addAction("+left+", "+action+")");
+			}
+			return true;
+		}
+		return false;
 	}
 
 

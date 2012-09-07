@@ -2,9 +2,13 @@ package felix.parser.glr.grammar;
 
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
 import java.util.TreeSet;
 
+import felix.parser.glr.Parser;
 import felix.parser.glr.Parser.StackHead;
 import felix.parser.glr.automaton.Automaton;
 import felix.parser.glr.automaton.Automaton.BuildQueueItem;
@@ -94,7 +98,18 @@ public abstract class Symbol implements Comparable<Symbol> {
 	public Symbol ge(Priority pp) {
 		return withPriorityRequirement(pp.requireGreaterThanOrEqualTo());
 	}
+	public Symbol lt(Priority pp) {
+		return withPriorityRequirement(pp.requireLessThan());
+	}
 
+	public Symbol le(Priority pp) {
+		return withPriorityRequirement(pp.requireLessThanOrEqualTo());
+	}
+
+	public Symbol eq(Priority pp) {
+		return withPriorityRequirement(pp.requireEqualTo());
+	}
+	
 	public boolean compatibleWith(Symbol symbol, Priority priority) {
 		return equals(symbol);
 	}
@@ -110,4 +125,26 @@ public abstract class Symbol implements Comparable<Symbol> {
 		set.add(this);
 	}
 	
+	
+	/**
+	 * Parse a string using this symbol as the root symbol.  Useful
+	 * for simple usages and test cases.
+	 */
+	public Node parse(String input) throws IOException, ParseException {
+		final Set<Terminal> ignore = Collections.<Terminal>emptySet();
+		return this.parse(input, ignore);
+	}
+	
+	/**
+	 * Parse a string using this symbol as the root symbol.  Useful
+	 * for simple usages and test cases.
+	 */
+	public Node parse(String input, Set<Terminal> ignore) throws IOException, ParseException {
+		final Grammar g = new Grammar(this, ignore);
+		return Parser.parse(g, input, "<string>");
+	}
+
+	public boolean isTerminal() {
+		return ! isNonTerminal();
+	}
 }

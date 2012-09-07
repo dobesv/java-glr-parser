@@ -14,6 +14,9 @@ public class Token extends Node {
 	
 	public Token(FileRange fileRange, Symbol symbol, String text, String ignoredPrefix) {
 		super(symbol);
+		if(fileRange == null) throw new NullPointerException();
+		if(text == null) throw new NullPointerException();
+		if(text.length() != fileRange.length()) throw new IllegalStateException();
 		this.fileRange = fileRange;
 		this.text = text;
 		this.ignoredPrefix = ignoredPrefix;

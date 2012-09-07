@@ -1,5 +1,6 @@
 package felix.parser.glr;
 
+import static felix.parser.glr.grammar.Symbols.*;
 import static felix.parser.glr.grammar.Symbols.kw;
 import static felix.parser.glr.grammar.Symbols.nt;
 import static felix.parser.glr.grammar.Symbols.re;
@@ -18,8 +19,10 @@ import org.junit.Test;
 
 import felix.parser.glr.grammar.Grammar;
 import felix.parser.glr.grammar.KeywordTerminal;
+import felix.parser.glr.grammar.Marker;
 import felix.parser.glr.grammar.NonTerminal;
 import felix.parser.glr.grammar.Priority;
+import felix.parser.glr.grammar.Sequence;
 import felix.parser.glr.grammar.Symbol;
 import felix.parser.glr.grammar.SymbolRef;
 import felix.parser.glr.grammar.Terminal;
@@ -33,12 +36,14 @@ import felix.parser.util.ParserReader;
 public class BasicTests {
 	private static final String TEST_FILENAME = "<test>";
 	final Terminal NUM = re("NUM", "[0-9]+");
+	final Terminal ID = re("ID", "\\p{Alpha}\\w*");
 	final KeywordTerminal PLUS = kw("+");
 	final KeywordTerminal TIMES = kw("*");
+	final KeywordTerminal COMMA = kw(",");
 	final Terminal WS = re("WS", "\\s+");
 	final Terminal SL_COMMENT = re("SL_COMMENT", "\\s*//[^\n]*\\s*");
 	final Terminal ML_COMMENT = re("ML_COMMENT", "\\s*/\\*.*?\\*/\\s*");
-
+	
 	final Set<Terminal> ignore = new TreeSet<>(Arrays.asList(WS, SL_COMMENT, ML_COMMENT));
 	Node _parse(String str, Symbol root, Symbol ... symbols) throws IOException, ParseException {
 		Grammar grammar = new Grammar(root, ignore);
@@ -150,6 +155,7 @@ public class BasicTests {
 	
 	@Test
 	public void parseSumAndProductWithPrecedence1() throws Exception {
+		Parser.debug = true;
 		String src = "12*34+56*78";
 		Symbol _expr = new SymbolRef("Expr");
 		Priority ps = new Priority("ps"); // Sum priority
@@ -213,5 +219,44 @@ public class BasicTests {
 				));
 		assertEquals(expected, node);
 		
+	}
+	
+	@Test
+	public void parseOptionalSuffix() throws Exception {
+		Symbol maybePair = nt("maybe_pair", ID, opt(ID));
+		Element pair = (Element) maybePair.parse("a b", ignore);
+		System.out.println("pair:"+pair);
+		assertEquals(2, pair.children.length);
+		assertEquals("a", ((Token)pair.children[0]).getText());
+		Element opt_b = ((Element)pair.children[1]);
+		assertEquals(1, opt_b.children.length);
+		assertEquals("b", ((Token)opt_b.children[0]).getText());
+		Element single = (Element) maybePair.parse("c", ignore);
+		System.out.println("single:"+single);
+		assertEquals(2, single.children.length);
+		assertEquals("c", ((Token)single.children[0]).getText());
+		Element opt_nil = ((Element)single.children[1]);
+		assertEquals(1, opt_nil.children.length);
+		assertEquals(Marker.NIL, opt_nil.children[0].symbol);
+		assertEquals("", ((Token) opt_nil.children[0]).getText());
+	}
+	
+	@Test
+	public void parseOptionalCommaSuffix() throws Exception {
+		Parser.debug = true;
+		Symbol maybePair = nt("maybe_pair", ID, opt(COMMA, ID));
+		Element pair = (Element) maybePair.parse("a,b", ignore);
+		System.out.println("pair:"+pair);
+		Element single = (Element) maybePair.parse("c", ignore);
+		System.out.println("single:"+single);
+	}
+	
+	@Test
+	public void parseCommaList() throws Exception {
+		String src="a,b,c,d,e";
+		Symbol idList = new Sequence("id_list", ID, Sequence.Mode.ONE_OR_MORE, COMMA);
+		Parser.debug = true;
+		final Node node = idList.parse(src, ignore);
+		System.out.println("comma list result node: "+node);
 	}
 }

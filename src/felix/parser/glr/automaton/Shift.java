@@ -13,6 +13,10 @@ public class Shift extends Action {
 	public final Symbol symbol;
 	
 	public Shift(State state, Symbol symbol, Priority priority) {
+		this(symbol, state, priority);
+	}
+
+	public Shift(Symbol symbol, State state, Priority priority) {
 		super(priority);
 		this.state = state;
 		this.symbol = symbol;
