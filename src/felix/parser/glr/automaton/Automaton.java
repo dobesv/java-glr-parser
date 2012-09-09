@@ -1,5 +1,8 @@
 package felix.parser.glr.automaton;
 
+import java.io.EOFException;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -7,10 +10,17 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
+import felix.parser.glr.AmbiguousInputException;
 import felix.parser.glr.Parser;
+import felix.parser.glr.Parser.StackHead;
+import felix.parser.glr.SyntaxError;
 import felix.parser.glr.grammar.Grammar;
+import felix.parser.glr.grammar.Marker;
 import felix.parser.glr.grammar.Priority;
 import felix.parser.glr.grammar.Symbol;
+import felix.parser.glr.grammar.Terminal;
+import felix.parser.glr.parsetree.Node;
+import felix.parser.util.ParserReader;
 
 /**
  * The automaton describes the action to take for each possible state.
@@ -29,6 +39,7 @@ public class Automaton {
 
 	public final LinkedHashMap<String,Symbol> symbols = new LinkedHashMap<>();
 	public final LinkedHashMap<State,Set<Action>> table = new LinkedHashMap<>();
+	public final Set<Terminal> ignore = new HashSet<>();
 	
 	public Automaton() {
 		super();
@@ -121,6 +132,9 @@ public class Automaton {
 		for(Symbol symbol : grammar.symbols) {
 			symbol.resolveRefs(this);
 		}
+		
+		ignore.addAll(grammar.ignore);
+		
 		LinkedList<BuildQueueItem> queue = new LinkedList<>();
 		final State rootStatePrefix = null; //(grammar.root instanceof NonTerminal) ? null : State.START_OF_FILE; // Hmmm bit of a hack here
 		queue.add(new BuildQueueItem(grammar.root, null, rootStatePrefix));
@@ -203,5 +217,61 @@ public class Automaton {
 
 	public Symbol getSymbol(String id) {
 		return symbols.get(id);
+	}
+
+	public Node parse(ParserReader input)
+			throws IOException, SyntaxError, AmbiguousInputException {
+		LinkedList<StackHead> stacks = new LinkedList<>();
+		stacks.add(new StackHead(null, null, Marker.START_OF_FILE.match(input, null, ""), Priority.DEFAULT, this));
+		ArrayList<Node> completed = new ArrayList<>();
+		try {
+			while(!stacks.isEmpty()) {
+				StackHead stack = stacks.removeFirst();
+				if(stack.state == State.ACCEPT) {
+					completed.add(stack.node);
+					continue;
+				}
+				State state = stack.state;
+				Set<Action> actions = getActions(state);
+				if(actions == null || actions.isEmpty()) {
+					if(Parser.debug) System.out.println("No successor to state "+state);
+					// Ran out of steam on this alternative...
+					continue;
+				}
+				
+				// Seek to the end of the last token we read
+				input.seek(stack.getParsePosition());
+				
+				// Skip over whitespace and comments
+				String ignored = input.consume(ignore);
+				
+				//if(debug) System.out.println("Stack:\n"+stack);
+				
+				// Compute our next state(s)
+				boolean matched = false;
+				for(Action action : actions) {
+					final StackHead newHead = action.apply(stack, input, ignored);
+					if(newHead != null) {
+						// We have a match!
+						matched = true;
+						if(Parser.debug) System.out.println(stack.state + " "+action+" -> "+newHead.state+" => "+newHead.node);
+						stacks.add(newHead);
+					}
+				}
+				if(!matched) {
+					System.out.println(input.getFilePos()+" in state "+stack.state+" nothing matched "+actions);
+				}
+			}
+		} catch(EOFException e) {
+			throw new SyntaxError("Passed EOF during parse. (BUG?)", input.getFileRange(input.getFilePos()));
+		}
+		if(completed.size() == 1) {
+			return completed.get(0);
+		} else if(completed.size() > 1){
+			throw new AmbiguousInputException(completed.toArray(new Node[completed.size()]));
+		} else {
+			// No successful parses
+			throw new SyntaxError("Failed to parse", input.getFileRange(input.getFilePos()));
+		}
 	}
 }

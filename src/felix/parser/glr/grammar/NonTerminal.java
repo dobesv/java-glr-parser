@@ -57,8 +57,9 @@ public class NonTerminal extends Symbol {
 		return sb.toString();
 	}
 	
-	public Element build(Node ... nodes) {
-		return new Element(this, nodes);
+	@Override
+	public Node build(Node ... nodes) {
+		return new Element(this, null, nodes);
 	}
 	
 	@Override

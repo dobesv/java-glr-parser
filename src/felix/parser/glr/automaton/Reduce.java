@@ -55,7 +55,9 @@ public class Reduce extends Action {
 			head = head.left;
 			state = state.left;
 		}
-		final StackHead newStack = new StackHead(head, new State(head.state, symbol), new Element(symbol, nodes), priority);
+		final Node newNode = symbol.build(nodes);
+		final State newState = new State(head.state, symbol);
+		final StackHead newStack = new StackHead(head, newState, newNode, priority);
 		//System.out.println("Reduce "+this+" head.state="+(head==null?null:head.state)+" state="+state+" new stack:\n"+newStack);
 		return newStack;
 		

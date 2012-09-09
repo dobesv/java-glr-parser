@@ -25,6 +25,12 @@ public abstract class Node {
 	 */
 	public abstract List<Token> getTokens();
 
+	/** Get a list of children. */
+	public abstract Node getChild(int position);
+	
+	/** Return the number of children */
+	public abstract int getChildCount();
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;

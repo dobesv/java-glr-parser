@@ -109,32 +109,32 @@ public class Symbols {
 	 * Create a non-terminal rule that allows the pattern to
 	 * match optionally (i.e. zero or one matches).
 	 */
-	public static Symbol opt(String id, Symbol ... parts) {
+	public static Sequence opt(String id, Symbol ... parts) {
 		return Sequence.optional(id, maybeNest(parts));
 	}
 	/**
 	 * Create a nested rule that allows the pattern to
 	 * match optionally (i.e. zero or one matches).
 	 */
-	public static Symbol opt(Symbol ... parts) {
+	public static Sequence opt(Symbol ... parts) {
 		return Sequence.optional(maybeNest(parts));
 	}
 	
 	/**
 	 * Parse a list of elements separated by a particular symbol.
 	 */
-	public static Symbol oneOrMoreSeparatedBy(Symbol element, Symbol separator) {
+	public static Sequence oneOrMoreSeparatedBy(Symbol element, Symbol separator) {
 		return Sequence.oneOrMoreSeperatedBy(element, separator);
 	}
 
 	/**
 	 * Parse a list of elements separated by a particular symbol.
 	 */
-	public static Symbol zeroOrMoreSeparatedBy(Symbol element, Symbol separator) {
+	public static Sequence zeroOrMoreSeparatedBy(Symbol element, Symbol separator) {
 		return Sequence.zeroOrMoreSeperatedBy(element, separator);
 	}
 	
-	public static Symbol optOneOf(Symbol ... alternatives) {
+	public static Sequence optOneOf(Symbol ... alternatives) {
 		if(alternatives.length == 1)
 			return opt(alternatives);
 		Rule[] rules = new Rule[alternatives.length];

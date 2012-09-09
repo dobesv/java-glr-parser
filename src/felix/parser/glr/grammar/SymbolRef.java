@@ -68,4 +68,10 @@ public class SymbolRef extends Symbol {
 	 */
 	@Override
 	public void collectSymbols(TreeSet<Symbol> set) { }
+	
+	@Override
+	public Node build(Node ... nodes) {
+		throw new UnsupportedOperationException();
+	}
+	
 }

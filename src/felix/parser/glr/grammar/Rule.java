@@ -8,7 +8,6 @@ import java.util.TreeSet;
 import felix.parser.glr.automaton.Automaton;
 import felix.parser.glr.automaton.Automaton.BuildQueueItem;
 import felix.parser.glr.automaton.Reduce;
-import felix.parser.glr.automaton.Shift;
 import felix.parser.glr.automaton.State;
 
 public class Rule {

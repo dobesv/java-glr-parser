@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 
-import felix.parser.glr.Parser;
 import felix.parser.glr.Parser.StackHead;
 import felix.parser.glr.automaton.Automaton;
 import felix.parser.glr.automaton.Automaton.BuildQueueItem;
@@ -22,6 +21,7 @@ public abstract class Symbol implements Comparable<Symbol> {
 	
 	public Symbol(String id) {
 		super();
+		if(id == null) throw new NullPointerException();
 		this.id = id;
 	}
 
@@ -141,10 +141,12 @@ public abstract class Symbol implements Comparable<Symbol> {
 	 */
 	public Node parse(String input, Set<Terminal> ignore) throws IOException, ParseException {
 		final Grammar g = new Grammar(this, ignore);
-		return Parser.parse(g, input, "<string>");
+		return g.parse(input, "<string>");
 	}
 
 	public boolean isTerminal() {
 		return ! isNonTerminal();
 	}
+
+	public abstract Node build(Node ... nodes);
 }

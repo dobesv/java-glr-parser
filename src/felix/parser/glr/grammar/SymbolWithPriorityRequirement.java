@@ -75,6 +75,11 @@ public class SymbolWithPriorityRequirement extends Symbol {
 	}
 	
 	@Override
+	public Node build(Node ... nodes) {
+		return symbol.build(nodes);
+	}
+
+	@Override
 	public void collectSymbols(TreeSet<Symbol> set) {
 		super.collectSymbols(set);
 		symbol.collectSymbols(set);

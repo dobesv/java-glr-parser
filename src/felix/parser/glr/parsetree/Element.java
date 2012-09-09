@@ -12,10 +12,24 @@ public class Element extends Node {
 	LinkedList<Token> tokens;
 	
 	public Element(Symbol symbol, Node ... children) {
+		this(symbol, null, children);
+	}
+
+	/**
+	 * 
+	 * @param symbol
+	 * @param fileRange If non-null, used as the file range; if null, file range is calculated from the children
+	 * @param children
+	 */
+	public Element(Symbol symbol, FileRange fileRange, Node ... children) {
 		super(symbol);
-		this.children = children;
+		if(children == null) throw new NullPointerException();
+		if(fileRange == null && children.length == 0) throw new IllegalStateException("Must provide fileRange if no children provided");
 		
-		// TODO Ideally we could just have some kind of flattening list here ...
+		this.children = children;
+		this.fileRange = fileRange;
+				
+		// TODO Ideally we could just have some kind of flattening / chained list here ...
 		tokens = new LinkedList<>();
 		for(Node n : children) {
 			tokens.addAll(n.getTokens());
@@ -33,7 +47,7 @@ public class Element extends Node {
 	
 	public static FileRange calculateRange(Node ... nodes) {
 		if(nodes.length == 0)
-			return null; // Not in any file
+			throw new IllegalStateException(); // Not in any file
 		FileRange head = nodes[0].getFileRange();
 		FileRange tail = nodes[nodes.length-1].getFileRange();
 		return new FileRange(head, tail);
@@ -80,5 +94,14 @@ public class Element extends Node {
 		return tokens;
 	}
 	
+	@Override
+	public Node getChild(int position) {
+		return children[position];
+	}
+	
+	@Override
+	public int getChildCount() {
+		return children.length;
+	}
 	
 }

@@ -1,14 +1,9 @@
 package felix.parser.glr.grammar;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.regex.Pattern;
 
 import felix.parser.glr.Parser.StackHead;
-import felix.parser.glr.automaton.Automaton.BuildQueueItem;
-import felix.parser.glr.automaton.Reduce;
-import felix.parser.glr.automaton.Shift;
-import felix.parser.glr.automaton.State;
 import felix.parser.glr.parsetree.Node;
 import felix.parser.util.ParserReader;
 

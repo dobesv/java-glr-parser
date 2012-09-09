@@ -8,6 +8,7 @@ import felix.parser.glr.automaton.Automaton.BuildQueueItem;
 import felix.parser.glr.automaton.Shift;
 import felix.parser.glr.automaton.State;
 import felix.parser.glr.grammar.Priority.Requirement;
+import felix.parser.glr.parsetree.Node;
 import felix.parser.glr.parsetree.Token;
 import felix.parser.util.FileRange;
 
@@ -47,5 +48,10 @@ public abstract class Terminal extends Symbol {
 	@Override
 	public boolean isNonTerminal() {
 		return false;
+	}
+	
+	@Override
+	public Node build(Node ... nodes) {
+		throw new UnsupportedOperationException();
 	}
 }

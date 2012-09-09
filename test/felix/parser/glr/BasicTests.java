@@ -34,7 +34,7 @@ import felix.parser.util.FileRange;
 import felix.parser.util.ParserReader;
  
 public class BasicTests {
-	private static final String TEST_FILENAME = "<test>";
+	private static final String TEST_FILENAME = "<string>";
 	final Terminal NUM = re("NUM", "[0-9]+");
 	final Terminal ID = re("ID", "\\p{Alpha}\\w*");
 	final KeywordTerminal PLUS = kw("+");
@@ -45,9 +45,39 @@ public class BasicTests {
 	final Terminal ML_COMMENT = re("ML_COMMENT", "\\s*/\\*.*?\\*/\\s*");
 	
 	final Set<Terminal> ignore = new TreeSet<>(Arrays.asList(WS, SL_COMMENT, ML_COMMENT));
+	
+	static void assertEqualTrees(String message, Node expected, Node actual, String path) {
+		if(expected.equals(actual))
+			return;
+		
+		String msg = path!=null ? "In "+path+(message != null?": "+message:""):message;
+		
+		// See if they different by string
+		assertEquals(msg, expected.toString(), actual.toString());
+		// Different types?
+		assertEquals(msg, expected.getClass(), actual.getClass());
+		// Different file position?
+		assertEquals(msg, expected.getFileRange().toString(), actual.getFileRange().toString());
+		assertEquals(msg, expected.getFileRange(), actual.getFileRange());
+		
+		assertEquals(msg, expected.getChildCount(), actual.getChildCount());
+		int count = expected.getChildCount();
+		for(int i=0; i < count; i++) {
+			Node expectedChild = expected.getChild(i);
+			Node actualChild = actual.getChild(i);
+			assertEqualTrees(message, expectedChild, actualChild, path+"["+i+"]");
+		}
+		
+		assertEquals(expected, actual);
+	}
+	
+	static void assertEqualTrees(Node expected, Node actual) {
+		assertEqualTrees(null, expected, actual, null);
+	}
+	
 	Node _parse(String str, Symbol root, Symbol ... symbols) throws IOException, ParseException {
 		Grammar grammar = new Grammar(root, ignore);
-		final Node parseResult = Parser.parse(grammar, str, TEST_FILENAME);
+		final Node parseResult = grammar.parse(str, TEST_FILENAME);
 		System.out.println("Parse result: "+parseResult);
 		return parseResult;
 	}
@@ -179,7 +209,7 @@ public class BasicTests {
 		Token star2 = tok(src, TIMES, 8);
 		Token _78 = tok(src, NUM, 9, "78");
 		
-		Element expected = expr.build(
+		Node expected = expr.build(
 				expr.build(expr.build(_12), star, expr.build(_34)),
 				plus,
 				expr.build(expr.build(_56), star2, expr.build(_78))
@@ -211,7 +241,7 @@ public class BasicTests {
 		Token plus2 = tok(src, PLUS, 8);
 		Token _78 = tok(src, NUM, 9, "78");
 		
-		Element expected = expr.build(expr.build(_12), plus,
+		Node expected = expr.build(expr.build(_12), plus,
 				expr.build(
 						expr.build(expr.build(_34), star, expr.build(_56)),
 						plus2,
@@ -236,19 +266,41 @@ public class BasicTests {
 		assertEquals(2, single.children.length);
 		assertEquals("c", ((Token)single.children[0]).getText());
 		Element opt_nil = ((Element)single.children[1]);
-		assertEquals(1, opt_nil.children.length);
-		assertEquals(Marker.NIL, opt_nil.children[0].symbol);
-		assertEquals("", ((Token) opt_nil.children[0]).getText());
+		assertEquals(0, opt_nil.children.length);
 	}
 	
 	@Test
 	public void parseOptionalCommaSuffix() throws Exception {
 		Parser.debug = true;
-		Symbol maybePair = nt("maybe_pair", ID, opt(COMMA, ID));
-		Element pair = (Element) maybePair.parse("a,b", ignore);
+		final Sequence optSuffix = opt(COMMA, ID);
+		Symbol maybePair = nt("maybe_pair", ID, optSuffix);
+		final String pairSrc = "a,b";
+		Element pair = (Element) maybePair.parse(pairSrc);
 		System.out.println("pair:"+pair);
-		Element single = (Element) maybePair.parse("c", ignore);
+		final String singleSrc = "c";
+		Element single = (Element) maybePair.parse(singleSrc);
 		System.out.println("single:"+single);
+		Node pairExpected = maybePair.build(tok(pairSrc, ID, 0, "a"), 
+				optSuffix.build(optSuffix.item.build(tok(pairSrc, COMMA, 1), tok(pairSrc, ID, 2, "b"))));
+		assertEqualTrees(pairExpected, pair);
+		Node singleExpected = maybePair.build(tok(singleSrc, ID, 0, singleSrc), optSuffix.build(tok(singleSrc, Marker.NIL, 1, "")));
+		assertEqualTrees(singleExpected, single);
+	}
+	
+	@Test
+	public void parseList() throws Exception {
+		String src="a b c d e";
+		Symbol idList = new Sequence("id_list", ID, Sequence.Mode.ONE_OR_MORE);
+		Parser.debug = true;
+		final Element list = (Element) idList.parse(src, ignore);
+		System.out.println("list result node: "+list);
+		assertEqualTrees(new Element(idList,
+				tok(src, ID, 0, "a"),
+				tok(src, ID, 2, "b"),
+				tok(src, ID, 4, "c"),
+				tok(src, ID, 6, "d"),
+				tok(src, ID, 8, "e")
+				), list);
 	}
 	
 	@Test
@@ -256,7 +308,19 @@ public class BasicTests {
 		String src="a,b,c,d,e";
 		Symbol idList = new Sequence("id_list", ID, Sequence.Mode.ONE_OR_MORE, COMMA);
 		Parser.debug = true;
-		final Node node = idList.parse(src, ignore);
-		System.out.println("comma list result node: "+node);
+		final Element list = (Element) idList.parse(src, ignore);
+		System.out.println("comma list result node: "+list);
+		assertEquals(9, list.children.length);
+		assertEqualTrees(new Element(idList,
+				tok(src, ID, 0, "a"),
+				tok(src, COMMA, 1),
+				tok(src, ID, 2, "b"),
+				tok(src, COMMA, 3),
+				tok(src, ID, 4, "c"),
+				tok(src, COMMA, 5),
+				tok(src, ID, 6, "d"),
+				tok(src, COMMA, 7),
+				tok(src, ID, 8, "e")
+				), list);
 	}
 }

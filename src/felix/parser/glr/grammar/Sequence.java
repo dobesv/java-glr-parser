@@ -1,15 +1,9 @@
 package felix.parser.glr.grammar;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 
-import felix.parser.glr.Parser.StackHead;
-import felix.parser.glr.automaton.Automaton;
 import felix.parser.glr.parsetree.Element;
 import felix.parser.glr.parsetree.Node;
-import felix.parser.util.ParserReader;
 
 /**
  * Matches some number of repetitions of the given symbol and
@@ -31,24 +25,53 @@ public class Sequence extends NonTerminal {
 		}
 	};
 	
-	final Mode mode;
-	final Symbol separator;
-	public Sequence(String id, Symbol delegate, Mode mode) {
-		this(id, delegate, mode, null);
+	public final Mode mode;
+	public final Symbol separator;
+	public final Symbol item;
+	
+	public Sequence(String id, Symbol item, Mode mode) {
+		this(id, item, mode, null);
 	}
-	public Sequence(String id, Symbol delegate, Mode mode, Symbol separator) {
-		super(id, buildRules(new SymbolRef(id), delegate, mode, separator));
+	public Sequence(String id, Symbol item, Mode mode, Symbol separator) {
+		super(id, buildRules(new SymbolRef(id), item, mode, separator));
+		this.item = item;
 		this.mode = mode;
 		this.separator = separator;
 	}
 	private static Rule[] optionalRule(Symbol delegate) {
+		// X? = Nil | X
 		return new Rule[] {Rule.EPSILON, new Rule(delegate)};
 	}
-	private static Rule oneOrMoreRule(Symbol self, Symbol delegate, Symbol separator) {
-		return new Rule(delegate, 
-						optional(separator == null ? self :
-									new NestedRule(separator, self)
-								));
+	private static Rule[] oneOrMoreRule(Symbol self, Symbol delegate, Symbol separator) {
+		if(separator == null) {
+			// X+ = X | X X+
+			return new Rule[] {
+					new Rule(delegate),
+					new Rule(self, delegate)
+			};
+		} else {
+			// X+[S] = X | X S X+[S]
+			return new Rule[] {
+					new Rule(delegate),
+					new Rule(self, separator, delegate)
+			};
+		}
+	}
+	private static Rule[] zeroOrMoreRule(Symbol self, Symbol delegate, Symbol separator) {
+		if(separator == null) {
+			// X* = Nil | X X*
+			return new Rule[] {
+					Rule.EPSILON,
+					new Rule(self, delegate)
+			};
+		} else {
+			// X*[S] = Nil | X | X*[S] S X 
+			return new Rule[] {
+					Rule.EPSILON,
+					new Rule(delegate),
+					new Rule(self, separator, delegate)
+			};
+		}
 	}
 	private static Rule[] buildRules(Symbol self, Symbol delegate, Mode mode, Symbol separator) {
 		switch(mode) {
@@ -57,9 +80,9 @@ public class Sequence extends NonTerminal {
 				throw new IllegalArgumentException("separator is not supported for mode "+mode);
 			return optionalRule(delegate);
 		case ONE_OR_MORE:
-			return new Rule[] { oneOrMoreRule(self, delegate, separator) };
+			return oneOrMoreRule(self, delegate, separator);
 		case ZERO_OR_MORE:
-			return optionalRule(new NestedRule(oneOrMoreRule(self, delegate, separator)));
+			return zeroOrMoreRule(self, delegate, separator);
 		default:
 			throw new IllegalStateException();
 		}
@@ -73,6 +96,26 @@ public class Sequence extends NonTerminal {
 	}
 	public Sequence(Symbol delegate, Mode mode, Symbol separator) {
 		this(genId(delegate, mode, separator), delegate, mode, separator);
+	}
+	
+	/**
+	 * Override build so that we flatten out the matches into one element rather than a sort of linked list
+	 */
+	@Override
+	public Node build(Node... nodes) {
+		if(nodes.length == 1) {
+			if(nodes[0].symbol.equals(Marker.NIL)) {
+				return new Element(this, nodes[0].getFileRange());
+			} else {
+				return super.build(nodes);
+			}
+		} else {
+			Element head = (Element)nodes[0];
+			int newLength = head.children.length + nodes.length - 1;
+			final Node[] newNodes = Arrays.copyOf(head.children, newLength);
+			System.arraycopy(nodes, 1, newNodes, head.children.length, nodes.length-1);
+			return super.build(newNodes);
+		}
 	}
 	
 	public static Sequence optional(Symbol s) {

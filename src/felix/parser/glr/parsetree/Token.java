@@ -85,6 +85,14 @@ public class Token extends Node {
 		return ignoredPrefix;
 	}
 
+	@Override
+	public Node getChild(int position) {
+		throw new IndexOutOfBoundsException();
+	}
 	
+	@Override
+	public int getChildCount() {
+		return 0;
+	}
 	
 }
